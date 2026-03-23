@@ -46,6 +46,22 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+For BM25 indexing with `pyserini>=0.41.0`, install JDK 21 and make sure the
+same shell sees it:
+
+```bash
+java -version
+python -c "import pyserini; print('pyserini OK')"
+```
+
+On macOS, a typical setup is:
+
+```bash
+brew install --cask temurin@21
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
 If you plan to use the React frontend:
 
 ```bash
@@ -77,6 +93,9 @@ bash scripts/build_indexes.sh
 # Convert processed JSONL into veRL parquet
 python scripts/prepare_verl_finqa_data.py
 ```
+
+If BM25 index building fails with `jdk.incubator.vector not found`, the shell is
+still using an older JDK. Switch to Java 21 and rerun the command.
 
 Expected outputs:
 

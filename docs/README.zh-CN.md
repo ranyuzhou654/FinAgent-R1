@@ -60,6 +60,22 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+如果你要构建 BM25 检索索引，`pyserini>=0.41.0` 需要 `JDK 21`。先确认当前 shell
+看到的就是正确版本：
+
+```bash
+java -version
+python -c "import pyserini; print('pyserini OK')"
+```
+
+macOS 常见配置方式：
+
+```bash
+brew install --cask temurin@21
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
 如果要跑 React 前端：
 
 ```bash
@@ -90,6 +106,9 @@ bash scripts/build_indexes.sh
 # JSONL -> veRL parquet
 python scripts/prepare_verl_finqa_data.py
 ```
+
+如果这里报 `jdk.incubator.vector not found`，说明当前 shell 仍然在使用过低版本的
+Java，需要切到 JDK 21 后再重新执行。
 
 关键产物包括：
 

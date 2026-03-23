@@ -168,8 +168,8 @@ pip install pyserini
 
 # 需要 Java（Pyserini 依赖 Lucene）
 # Ubuntu:
-sudo apt-get update && sudo apt-get install -y default-jdk
-java -version  # 确认 Java 11+
+sudo apt-get update && sudo apt-get install -y openjdk-21-jdk
+java -version  # 确认 Java 21+
 
 # 向量检索
 pip install faiss-gpu          # GPU 版 FAISS
@@ -179,6 +179,9 @@ pip install sentence-transformers  # BGE 编码模型
 python -c "import faiss; print('faiss OK, GPU:', faiss.get_num_gpus())"
 python -c "from pyserini.search.lucene import LuceneSearcher; print('pyserini OK')"
 ```
+
+如果构建 BM25 时出现 `Module jdk.incubator.vector not found`，通常是因为当前 shell
+仍在使用 Java 11/17 等较低版本；切换到 JDK 21 后重试。
 
 ## 2.7 安装数据库依赖
 
@@ -869,6 +872,11 @@ echo "BM25 索引构建完成！文件: $INDEX_DIR"
 chmod +x scripts/build_bm25_index.sh
 ./scripts/build_bm25_index.sh
 ```
+
+当前仓库里的 `build_bm25_index.sh` 已经增加了预检查：
+- 当前 Python 环境是否安装了 `pyserini`
+- 当前 shell 是否正在使用 `Java 21+`
+- `data/corpus/financial_passages.jsonl` 是否已经存在
 
 ### 4.1.2 构建 BGE 稠密检索索引
 

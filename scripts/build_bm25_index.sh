@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 INDEX_DIR="data/indexes/bm25"
 CORPUS_DIR="data/corpus"
 CORPUS_FILE="$CORPUS_DIR/financial_passages.jsonl"
+BM25_INPUT_DIR="$CORPUS_DIR/.bm25_input"
 
 errors=()
 
@@ -46,10 +47,14 @@ if (( ${#errors[@]} > 0 )); then
 fi
 
 mkdir -p "$INDEX_DIR"
+rm -rf "$BM25_INPUT_DIR"
+mkdir -p "$BM25_INPUT_DIR"
+cp "$CORPUS_FILE" "$BM25_INPUT_DIR/financial_passages.jsonl"
+trap 'rm -rf "$BM25_INPUT_DIR"' EXIT
 
 python -m pyserini.index.lucene \
   --collection JsonCollection \
-  --input "$CORPUS_DIR" \
+  --input "$BM25_INPUT_DIR" \
   --index "$INDEX_DIR" \
   --generator DefaultLuceneDocumentGenerator \
   --threads 4 \

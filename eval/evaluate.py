@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from training.reward_functions import answers_match, extract_answer
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_TEST_FILE = ROOT_DIR / "data" / "processed" / "test.jsonl"
+TOOL_CALL_PATTERN = re.compile(r"<(search|calculate|sql)>(.*?)</\1>", re.DOTALL)
 
 
 def load_model(model_path: str):
@@ -49,6 +51,30 @@ def generate_fn_factory(model, tokenizer):
     return generate
 
 
+def normalize_program(program: str) -> str:
+    return " ".join(str(program).strip().lower().split())
+
+
+def extract_tool_calls(text: str) -> list[tuple[str, str]]:
+    return [(tool, content.strip()) for tool, content in TOOL_CALL_PATTERN.findall(text)]
+
+
+def program_matches(predicted_trace: str, gold_program: str) -> bool:
+    normalized_gold = normalize_program(gold_program)
+    if not normalized_gold:
+        return False
+    predicted_calculations = [
+        normalize_program(content)
+        for tool, content in extract_tool_calls(predicted_trace)
+        if tool == "calculate"
+    ]
+    if normalized_gold in predicted_calculations:
+        return True
+    if normalized_gold.startswith("table_"):
+        return any(tool == "sql" for tool, _ in extract_tool_calls(predicted_trace))
+    return False
+
+
 def evaluate(model_path: str, test_file: str | Path = DEFAULT_TEST_FILE, max_samples: int | None = None) -> dict:
     model, tokenizer = load_model(model_path)
     generate = generate_fn_factory(model, tokenizer)
@@ -72,9 +98,14 @@ def evaluate(model_path: str, test_file: str | Path = DEFAULT_TEST_FILE, max_sam
         )
         predicted_answer = extract_answer(rollout["full_text"])
         is_correct = answers_match(predicted_answer, item["answer"])
+        is_program_correct = program_matches(rollout["full_text"], item.get("program", ""))
         metrics["total"] += 1
         if is_correct:
             metrics["correct"] += 1
+        if item.get("program"):
+            metrics["program_total"] += 1
+            if is_program_correct:
+                metrics["program_correct"] += 1
         if rollout["tool_trace"]:
             metrics["used_tools"] += 1
             tool_types = {entry["tool"] for entry in rollout["tool_trace"]}
@@ -89,6 +120,7 @@ def evaluate(model_path: str, test_file: str | Path = DEFAULT_TEST_FILE, max_sam
                 "gold": item["answer"],
                 "pred": predicted_answer,
                 "correct": is_correct,
+                "program_correct": is_program_correct,
                 "tools_used": [entry["tool"] for entry in rollout["tool_trace"]],
                 "num_tool_calls": len(rollout["tool_trace"]),
             }
@@ -98,7 +130,9 @@ def evaluate(model_path: str, test_file: str | Path = DEFAULT_TEST_FILE, max_sam
             print(f"[{index}/{len(test_items)}] accuracy={accuracy:.1f}%")
 
     total = metrics["total"] or 1
+    program_total = metrics["program_total"] or 1
     metrics["execution_accuracy"] = metrics["correct"] / total
+    metrics["program_accuracy"] = metrics["program_correct"] / program_total
     metrics["tool_usage_rate"] = metrics["used_tools"] / total
     metrics["multi_tool_rate"] = metrics["multi_tool"] / total
 
@@ -109,6 +143,7 @@ def evaluate(model_path: str, test_file: str | Path = DEFAULT_TEST_FILE, max_sam
         json.dump({"metrics": dict(metrics), "results": detailed}, handle, ensure_ascii=False, indent=2)
 
     print(f"Execution Accuracy: {metrics['execution_accuracy'] * 100:.1f}%")
+    print(f"Program Accuracy: {metrics['program_accuracy'] * 100:.1f}%")
     print(f"Tool Usage Rate: {metrics['tool_usage_rate'] * 100:.1f}%")
     print(f"Multi-Tool Rate: {metrics['multi_tool_rate'] * 100:.1f}%")
     print(f"Saved evaluation results to {output_path}")
@@ -124,4 +159,3 @@ if __name__ == "__main__":
     parser.add_argument("--max-samples", type=int, default=50)
     args = parser.parse_args()
     evaluate(args.model_path, test_file=args.test_file, max_samples=args.max_samples)
-

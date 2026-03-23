@@ -8,7 +8,8 @@ from eval.evaluate import evaluate
 EXPERIMENTS = [
     ("Qwen/Qwen2.5-3B", "Base model"),
     ("checkpoints/sft/final", "SFT cold-start"),
-    ("checkpoints/grpo/final", "GRPO"),
+    ("checkpoints/grpo/final", "GRPO (TRL/Unsloth)"),
+    ("checkpoints/grpo_verl", "GRPO (veRL mainline)"),
 ]
 
 
@@ -25,4 +26,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

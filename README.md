@@ -1,30 +1,32 @@
-# FinAgent-R1
+# FinAgent-R1 🏦🔎🧮
+
+[中文说明 🇨🇳](docs/README.zh-CN.md)
 
 FinAgent-R1 is a financial multi-tool agent project inspired by Search-R1. The
 system trains an LLM to decide when to search report passages, run financial
 calculations, and query structured tables with SQL.
 
-## What This Repo Contains
+## ✨ What This Repo Contains
 
-- A FinQA-oriented data pipeline that converts raw report reasoning examples into
-  JSONL and veRL parquet datasets.
-- Three tool backends: report search, financial calculation, and SQLite access.
-- A Search-R1-style veRL multi-turn GRPO training path as the primary RL setup.
-- Optional SFT, TRL, and Unsloth compatibility scripts for smaller-scale runs.
-- Evaluation plus FastAPI, Gradio, React, and Docker demo surfaces.
+- 📚 A FinQA-oriented data pipeline that converts raw report reasoning examples
+  into JSONL and veRL parquet datasets.
+- 🛠️ Three tool backends: report search, financial calculation, and SQLite access.
+- 🤖 A Search-R1-style veRL multi-turn GRPO training path as the primary RL setup.
+- 🧪 Optional SFT, TRL, and Unsloth compatibility scripts for smaller-scale runs.
+- 🖥️ Evaluation plus FastAPI, Gradio, React, and Docker demo surfaces.
 
-## Project Structure
+## 🧱 Project Structure
 
 The repository is organized into six layers:
 
-1. Data preparation for FinQA-style report reasoning.
-2. Tool backends for retrieval, calculation, and SQL access.
-3. Optional SFT cold-start scripts for tool-tag formatting.
-4. Search-R1-style veRL multi-turn GRPO as the main training path.
-5. Optional TRL / Unsloth compatibility training scripts.
-6. Evaluation plus FastAPI, Gradio, and React demo surfaces.
+1. 📦 Data preparation for FinQA-style report reasoning.
+2. 🔍 Tool backends for retrieval, calculation, and SQL access.
+3. 📝 Optional SFT cold-start scripts for tool-tag formatting.
+4. 🚀 Search-R1-style veRL multi-turn GRPO as the main training path.
+5. 🔁 Optional TRL / Unsloth compatibility training scripts.
+6. 📊 Evaluation plus FastAPI, Gradio, and React demo surfaces.
 
-## Quick Start
+## ⚡ Quick Start
 
 1. Create a Python 3.10+ environment.
 2. Install dependencies from `requirements.txt`.
@@ -34,9 +36,9 @@ The repository is organized into six layers:
 6. Test tools with `python scripts/test_tools.py`.
 7. Launch the main veRL training path with `bash scripts/train_grpo_verl.sh`.
 
-## Usage Guide
+## 📘 Usage Guide
 
-### 1. Prepare The Environment
+### 1. 🧰 Prepare The Environment
 
 ```bash
 python -m venv .venv
@@ -52,7 +54,7 @@ npm install
 cd ../..
 ```
 
-### 2. Build The Data Pipeline
+### 2. 🏗️ Build The Data Pipeline
 
 Raw FinQA data is expected under `data/raw/finqa_hf`. Once the dataset is in
 place, run the repository pipeline in this order:
@@ -85,7 +87,7 @@ Expected outputs:
 - `data/indexes/...`
 - `data/verl/finqa/train.parquet`, `validation.parquet`, `test.parquet`
 
-### 3. Verify The Tool Stack
+### 3. ✅ Verify The Tool Stack
 
 Before training, validate that retrieval, calculator, and SQL execution all
 work from the command line:
@@ -94,7 +96,7 @@ work from the command line:
 python scripts/test_tools.py
 ```
 
-### 4. Run The Main Training Path
+### 4. 🤖 Run The Main Training Path
 
 The primary training path is veRL-based multi-turn GRPO.
 
@@ -122,13 +124,13 @@ bash scripts/train_grpo_verl.sh \
 The veRL config lives in `configs/verl_ppo_finqa.yaml`. By default, checkpoints
 go to `checkpoints/grpo_verl`.
 
-## Optional Pipelines
+## 🧪 Optional Pipelines
 
-- Generate SFT seed data with `python scripts/generate_sft_data.py`.
-- Run SFT cold-start with `python training/sft_coldstart.py`.
-- Smoke-test the SFT adapter with `python scripts/test_sft_model.py`.
-- Run pure TRL GRPO with `python training/grpo_train.py`.
-- Run Unsloth GRPO with `python training/grpo_train_unsloth.py`.
+- 🪴 Generate SFT seed data with `python scripts/generate_sft_data.py`.
+- 🧠 Run SFT cold-start with `python training/sft_coldstart.py`.
+- 🔎 Smoke-test the SFT adapter with `python scripts/test_sft_model.py`.
+- 🔁 Run pure TRL GRPO with `python training/grpo_train.py`.
+- ⚙️ Run Unsloth GRPO with `python training/grpo_train_unsloth.py`.
 
 Recommended order if you want the optional branch:
 
@@ -139,7 +141,7 @@ python scripts/test_sft_model.py
 python training/grpo_train.py
 ```
 
-## Demo Surfaces
+## 🖥️ Demo Surfaces
 
 - FastAPI backend: `python demo/backend/main.py`
 - Gradio app: `python demo/gradio_app.py`
@@ -179,7 +181,7 @@ The backend exposes:
 - `POST /api/ask`
 - `POST /api/ask_stream`
 
-## Evaluation
+## 📏 Evaluation
 
 - Main evaluation: `python eval/evaluate.py <model_path> --max-samples 50`
 - Ablation runner: `python eval/ablation.py`
@@ -193,14 +195,14 @@ python eval/ablation.py
 
 `eval/evaluate.py` currently reports:
 
-- Execution Accuracy
-- Heuristic Program Accuracy
-- Tool Usage Rate
-- Multi-Tool Rate
+- ✅ Execution Accuracy
+- 🧩 Heuristic Program Accuracy
+- 🛠️ Tool Usage Rate
+- 🔀 Multi-Tool Rate
 
-## Pipeline And Principles
+## 🔄 Pipeline And Principles
 
-### Training Pipeline
+### 🏋️ Training Pipeline
 
 The repository follows this high-level flow:
 
@@ -218,7 +220,7 @@ The repository follows this high-level flow:
 7. Rule-based rewards score answer correctness and agent behavior, and GRPO
    updates the policy.
 
-### Inference Pipeline
+### 🧭 Inference Pipeline
 
 At evaluation time or in the demo backend, the agent loop is:
 
@@ -230,7 +232,7 @@ At evaluation time or in the demo backend, the agent loop is:
 5. Append the tool result as an observation.
 6. Repeat until the model emits `<answer>...</answer>` or the turn budget ends.
 
-### Why Multi-Turn RL Instead Of Plain RAG
+### 🆚 Why Multi-Turn RL Instead Of Plain RAG
 
 This repository is not just a prompt-augmented RAG baseline. The model is
 trained to decide:
@@ -242,7 +244,7 @@ trained to decide:
 
 That is the main reason the veRL path is the primary training setup.
 
-### Reward Design
+### 🎯 Reward Design
 
 The current rule-based reward stack combines:
 
@@ -256,7 +258,7 @@ The veRL path consumes these rewards through `training/finagent_verl_main.py`,
 while the optional TRL / Unsloth scripts use compatibility wrappers in
 `training/reward_functions.py`.
 
-## Notes
+## 📝 Notes
 
 - The repository defaults to `faiss-cpu` for portability. Replace it with a GPU
   build in your training environment if needed.

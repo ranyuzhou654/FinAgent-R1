@@ -56,6 +56,35 @@ class LLMGenerationManager:
             )
         )
 
+    def _normalize_question_id(self, value: Any) -> str | None:
+        if value is None:
+            return None
+        text = str(value).strip()
+        if not text or text.lower() == "nan":
+            return None
+        return text
+
+    def _extract_question_ids(self, gen_batch: DataProto) -> list[str | None]:
+        batch_size = gen_batch.batch["input_ids"].shape[0]
+        non_tensor_batch = getattr(gen_batch, "non_tensor_batch", {}) or {}
+
+        if "question_id" in non_tensor_batch:
+            return [self._normalize_question_id(value) for value in non_tensor_batch["question_id"]]
+
+        reward_items = non_tensor_batch.get("reward_model")
+        if reward_items is not None:
+            question_ids: list[str | None] = []
+            for reward_item in reward_items:
+                if isinstance(reward_item, dict):
+                    ground_truth = reward_item.get("ground_truth", {})
+                    question_ids.append(self._normalize_question_id(ground_truth.get("question_id")))
+                else:
+                    question_ids.append(None)
+            if len(question_ids) == batch_size:
+                return question_ids
+
+        return [None] * batch_size
+
     def _batch_tokenize(self, responses: list[str]) -> torch.Tensor:
         return self.tokenizer(
             responses,
@@ -190,6 +219,7 @@ class LLMGenerationManager:
             "responses": initial_input_ids[:, []],
             "responses_with_info_mask": initial_input_ids[:, []],
         }
+        question_ids = self._extract_question_ids(gen_batch)
         active_mask = torch.ones(gen_batch.batch["input_ids"].shape[0], dtype=torch.bool)
         turns_stats = torch.ones(gen_batch.batch["input_ids"].shape[0], dtype=torch.int)
         valid_action_stats = torch.zeros(gen_batch.batch["input_ids"].shape[0], dtype=torch.int)
@@ -208,7 +238,11 @@ class LLMGenerationManager:
             meta_info = gen_output.meta_info
             responses_ids, responses_str = self._postprocess_responses(gen_output.batch["responses"])
             responses_ids, responses_str = self.tensor_fn.example_level_pad(responses_ids, responses_str, active_mask)
-            next_obs, dones, valid_action, tool_used = self.execute_predictions(responses_str, active_mask)
+            next_obs, dones, valid_action, tool_used = self.execute_predictions(
+                responses_str,
+                active_mask,
+                question_ids=question_ids,
+            )
             curr_active_mask = torch.tensor([not done for done in dones], dtype=torch.bool)
             active_mask = active_mask * curr_active_mask
             turns_stats[curr_active_mask] += 1
@@ -229,7 +263,12 @@ class LLMGenerationManager:
             meta_info = gen_output.meta_info
             responses_ids, responses_str = self._postprocess_responses(gen_output.batch["responses"])
             responses_ids, responses_str = self.tensor_fn.example_level_pad(responses_ids, responses_str, active_mask)
-            _, dones, valid_action, tool_used = self.execute_predictions(responses_str, active_mask, do_tools=False)
+            _, dones, valid_action, tool_used = self.execute_predictions(
+                responses_str,
+                active_mask,
+                do_tools=False,
+                question_ids=question_ids,
+            )
             curr_active_mask = torch.tensor([not done for done in dones], dtype=torch.bool)
             active_mask = active_mask * curr_active_mask
             valid_action_stats += torch.tensor(valid_action, dtype=torch.int)
@@ -282,6 +321,7 @@ class LLMGenerationManager:
         predictions: list[str],
         active_mask: torch.Tensor,
         do_tools: bool = True,
+        question_ids: list[str | None] | None = None,
     ) -> tuple[list[str], list[int], list[int], list[int]]:
         parsed = [self._parse_action(prediction) for prediction in predictions]
         search_queries = [content for action, content in parsed if action == "search"]
@@ -289,13 +329,15 @@ class LLMGenerationManager:
             search_results = self.batch_search(search_queries)
         else:
             search_results = [""] * len(search_queries)
+        if question_ids is None:
+            question_ids = [None] * len(predictions)
 
         next_obs: list[str] = []
         dones: list[int] = []
         valid_action: list[int] = []
         tool_used: list[int] = []
 
-        for (action, content), active in zip(parsed, active_mask.tolist()):
+        for (action, content), active, question_id in zip(parsed, active_mask.tolist(), question_ids):
             if not active:
                 next_obs.append("")
                 dones.append(1)
@@ -319,7 +361,7 @@ class LLMGenerationManager:
                 valid_action.append(1)
                 tool_used.append(1)
             elif action == "sql":
-                next_obs.append(self._format_observation(execute_sql(content)))
+                next_obs.append(self._format_observation(execute_sql(content, question_id=question_id)))
                 dones.append(0)
                 valid_action.append(1)
                 tool_used.append(1)
@@ -369,4 +411,3 @@ class LLMGenerationManager:
             contents = document.get("contents", document.get("text", ""))
             passages.append(f"Doc {index} (Title: {title}) {contents}")
         return "\n".join(passages)
-

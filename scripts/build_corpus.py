@@ -13,7 +13,9 @@ RAW_DATASET_PATH = ROOT_DIR / "data" / "raw" / "finqa_hf"
 CORPUS_DIR = ROOT_DIR / "data" / "corpus"
 
 
-def normalize_text(text: str) -> str:
+def normalize_text(text: object) -> str:
+    if isinstance(text, list):
+        return " ".join(" ".join(str(item).split()) for item in text if str(item).strip())
     return " ".join(str(text).split())
 
 
@@ -68,4 +70,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

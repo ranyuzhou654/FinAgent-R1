@@ -25,6 +25,23 @@ OPS = [
 ]
 
 
+def flatten_text(value: object) -> str:
+    if isinstance(value, list):
+        return " ".join(str(item) for item in value)
+    return str(value)
+
+
+def compact_preview(value: object, limit: int = 200) -> str:
+    text = " ".join(flatten_text(value).split())
+    if len(text) <= limit:
+        return text
+    return text[:limit] + "..."
+
+
+def get_program(example: dict) -> str:
+    return str(example.get("program") or example.get("program_re") or "")
+
+
 def preview_table(table: list[list[str]], limit: int = 5) -> str:
     rows = ["   " + " | ".join(str(cell) for cell in row) for row in table[:limit]]
     if len(table) > limit:
@@ -40,14 +57,15 @@ def main() -> None:
     print("FinQA example structure")
     print("=" * 60)
     print(f"\n1. ID: {example['id']}")
-    print(f"\n2. pre_text (first 200 chars):\n{example['pre_text'][:200]}...")
+    print(f"\n2. pre_text (first 200 chars):\n{compact_preview(example.get('pre_text', []))}")
     print(f"\n3. table:\n{preview_table(example['table'])}")
-    print(f"\n4. post_text (first 200 chars):\n{example['post_text'][:200]}...")
+    print(f"\n4. post_text (first 200 chars):\n{compact_preview(example.get('post_text', []))}")
     print(f"\n5. question: {example['question']}")
     print(f"\n6. answer: {example['answer']}")
-    print(f"\n7. program:\n   {example['program']}")
-    print(f"\n8. program_re:\n   {example['program_re']}")
+    print(f"\n7. program:\n   {get_program(example) or '<missing>'}")
+    print(f"\n8. program_re:\n   {example.get('program_re', '<missing>')}")
     print(f"\n9. gold_inds:\n   {example.get('gold_inds')}")
+    print(f"\n10. available keys:\n   {sorted(example.keys())}")
 
     print("\n" + "=" * 60)
     print("Dataset statistics")
@@ -57,7 +75,7 @@ def main() -> None:
 
     op_counter: Counter[str] = Counter()
     for item in dataset["train"]:
-        program = item.get("program", "")
+        program = get_program(item)
         for op in OPS:
             if op in program:
                 op_counter[op] += 1
@@ -69,4 +87,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -29,6 +29,12 @@ Rules:
 Question: {question}"""
 
 
+def flatten_text_block(value: object) -> str:
+    if isinstance(value, list):
+        return " ".join(str(item) for item in value)
+    return str(value)
+
+
 def stringify_table(table: list[list[str]]) -> str:
     if not table:
         return ""
@@ -36,24 +42,27 @@ def stringify_table(table: list[list[str]]) -> str:
 
 
 def process_example(example: dict) -> dict:
+    pre_text = flatten_text_block(example.get("pre_text", ""))
+    post_text = flatten_text_block(example.get("post_text", ""))
     table_text = stringify_table(example.get("table") or [])
     context = (
-        f"{example.get('pre_text', '').strip()}\n\n"
+        f"{pre_text.strip()}\n\n"
         f"[Table]\n{table_text}\n\n"
-        f"{example.get('post_text', '').strip()}"
+        f"{post_text.strip()}"
     ).strip()
 
     return {
         "id": example["id"],
         "prompt": AGENT_SYSTEM_PROMPT.format(question=example["question"]),
         "question": example["question"],
-        "answer": str(example["answer"]),
-        "program": example.get("program", ""),
+        "answer": str(example.get("answer", example.get("final_result", ""))),
+        "program": str(example.get("program") or example.get("program_re") or ""),
         "context": context,
         "table": example.get("table", []),
-        "pre_text": example.get("pre_text", ""),
-        "post_text": example.get("post_text", ""),
+        "pre_text": pre_text,
+        "post_text": post_text,
         "gold_inds": example.get("gold_inds", {}),
+        "final_result": str(example.get("final_result", "")),
     }
 
 
@@ -75,4 +84,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

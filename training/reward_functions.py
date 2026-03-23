@@ -32,6 +32,18 @@ def extract_answer(text: str) -> str:
     return lines[-1] if lines else ""
 
 
+def completion_to_text(completion: Any) -> str:
+    if isinstance(completion, str):
+        return completion
+    if isinstance(completion, dict):
+        if "content" in completion:
+            return str(completion["content"])
+        return str(completion)
+    if isinstance(completion, (list, tuple)):
+        return "\n".join(completion_to_text(item) for item in completion)
+    return str(completion)
+
+
 def normalize_answer(value: Any) -> str:
     normalized = str(value).strip().lower()
     normalized = normalized.replace("$", "").replace(",", "").replace("%", "").strip()
@@ -123,3 +135,51 @@ def compute_finagent_score(solution_str: str, ground_truth: dict[str, Any], weig
     bonus = compute_behavior_bonus(solution_str, weights)
     return accuracy + bonus
 
+
+def _resolve_gold_answers(answer: Any = None, ground_truth: Any = None, **kwargs) -> list[str] | None:
+    if answer is not None:
+        if isinstance(answer, list):
+            return [str(item) for item in answer]
+        return [str(answer)]
+    if ground_truth is not None:
+        if isinstance(ground_truth, list):
+            return [str(item.get("target", "")) if isinstance(item, dict) else str(item) for item in ground_truth]
+        if isinstance(ground_truth, dict):
+            return [str(ground_truth.get("target", ""))]
+        return [str(ground_truth)]
+    return None
+
+
+def accuracy_reward(completions: list[Any], answer: Any = None, ground_truth: Any = None, **kwargs) -> list[float]:
+    gold_answers = _resolve_gold_answers(answer=answer, ground_truth=ground_truth, **kwargs)
+    if gold_answers is None:
+        return [0.0] * len(completions)
+
+    if len(gold_answers) == 1 and len(completions) > 1:
+        gold_answers = gold_answers * len(completions)
+
+    rewards: list[float] = []
+    for completion, gold in zip(completions, gold_answers):
+        prediction = extract_answer(completion_to_text(completion))
+        rewards.append(1.0 if answers_match(prediction, gold) else 0.0)
+    return rewards
+
+
+def agent_behavior_reward(completions: list[Any], weights: RewardWeights | None = None, **kwargs) -> list[float]:
+    reward_weights = weights or RewardWeights()
+    return [compute_behavior_bonus(completion_to_text(completion), reward_weights) for completion in completions]
+
+
+def tool_efficiency_reward(completions: list[Any], weights: RewardWeights | None = None, **kwargs) -> list[float]:
+    reward_weights = weights or RewardWeights()
+    rewards: list[float] = []
+    for completion in completions:
+        text = completion_to_text(completion)
+        score = 0.0
+        if "<observation>" in text and not observation_followed_by_reasoning(text):
+            score += reward_weights.invalid_action_penalty
+        tool_counts = count_tool_calls(text)
+        if sum(tool_counts.values()) == 0:
+            score += reward_weights.no_tool_penalty
+        rewards.append(score)
+    return rewards

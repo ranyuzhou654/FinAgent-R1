@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import os
+
 import gradio as gr
 import requests
 
 
-BACKEND_URL = "http://127.0.0.1:8000/api/ask"
+BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000/api/ask")
 
 
 def ask_agent(question: str) -> str:
@@ -45,4 +47,3 @@ demo = gr.Interface(
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)
-

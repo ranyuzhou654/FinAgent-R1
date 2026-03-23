@@ -1,0 +1,35 @@
+services:
+  retrieval:
+    build:
+      context: .
+      dockerfile: Dockerfile.retrieval
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      MODEL_PATH: ${MODEL_PATH:-Qwen/Qwen2.5-3B}
+      MAX_TURNS: ${MAX_TURNS:-5}
+    depends_on:
+      - retrieval
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./checkpoints:/app/checkpoints
+
+  demo:
+    build:
+      context: .
+      dockerfile: Dockerfile.demo
+    environment:
+      BACKEND_URL: http://backend:8000/api/ask
+    depends_on:
+      - backend
+    ports:
+      - "7860:7860"

@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends default-jre-headless libgomp1 git \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /tmp/requirements.txt
+RUN grep -v '^unsloth' /tmp/requirements.txt > /tmp/requirements.no_unsloth.txt \
+    && pip install --no-cache-dir -r /tmp/requirements.no_unsloth.txt
+
+COPY . /app
+
+EXPOSE 5000
+
+CMD ["python", "tools/retrieval_server.py"]

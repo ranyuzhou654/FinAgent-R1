@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 import sqlite3
+import sys
 from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from tools.calculator_tool import execute_calculate
 from tools.search_tool import execute_search
 from tools.sql_tool import execute_sql, get_available_tables
 from tools.tool_dispatcher import detect_tool_call
 
-
-ROOT_DIR = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT_DIR / "data" / "tables" / "financial_data.db"
 
 

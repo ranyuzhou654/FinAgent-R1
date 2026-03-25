@@ -24,7 +24,47 @@ The repository is organized into six layers:
 3. 📝 Optional SFT cold-start scripts for tool-tag formatting.
 4. 🚀 Search-R1-style veRL multi-turn GRPO as the main training path.
 5. 🔁 Optional TRL / Unsloth compatibility training scripts.
-6. 📊 Evaluation plus FastAPI, Gradio, and React demo surfaces.
+6. 📊 Evaluation plus FastAPI, Gradio, React, and Docker demo surfaces.
+
+```
+FinAgent-R1/
+├── data/                          # Data pipeline artifacts
+│   ├── raw/                       #   Original downloaded datasets
+│   ├── processed/                 #   Train/val/test JSONL
+│   ├── corpus/                    #   Retrieval corpus
+│   ├── indexes/                   #   BM25 + FAISS indexes
+│   └── tables/                    #   SQLite database
+├── tools/                         # Three tool backends
+│   ├── search_tool.py             #   Financial passage retrieval
+│   ├── calculator_tool.py         #   Financial calculation engine
+│   ├── sql_tool.py                #   SQLite query executor
+│   ├── tool_dispatcher.py         #   Unified tool router
+│   └── retrieval_server.py        #   FastAPI retrieval service
+├── training/                      # Training scripts
+│   ├── finagent_verl_main.py      #   veRL main entry (primary)
+│   ├── finagent_generation.py     #   Multi-turn generation manager
+│   ├── reward_functions.py        #   Rule-based reward functions
+│   ├── search_r1_compat.py        #   Search-R1 vendor compat layer
+│   ├── tensor_helper.py           #   veRL tensor utilities
+│   ├── sft_coldstart.py           #   Optional SFT cold-start
+│   ├── grpo_train.py              #   Optional TRL GRPO
+│   ├── grpo_train_unsloth.py      #   Optional Unsloth GRPO
+│   └── void_turn_filter.py        #   Void turn detection
+├── eval/                          # Evaluation
+│   ├── evaluate.py                #   Main evaluation script
+│   └── ablation.py                #   Ablation experiments
+├── demo/                          # Demo surfaces
+│   ├── backend/main.py            #   FastAPI backend
+│   ├── gradio_app.py              #   Gradio frontend
+│   └── frontend/src/              #   React frontend (full impl)
+├── scripts/                       # Pipeline & utility scripts
+├── configs/                       # Training configs (veRL, SFT, TRL)
+├── vendor/Search-R1/              #   Vendored Search-R1 runtime
+├── docker-compose.yml             # Docker orchestration
+├── Dockerfile.{backend,retrieval,demo}
+├── README.md
+└── requirements.txt
+```
 
 ## ⚡ Quick Start
 

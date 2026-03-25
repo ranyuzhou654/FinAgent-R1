@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import uvicorn
 
-from tools.search_tool import get_search_tool, search_service_payload
+from search_tool import get_search_tool, search_service_payload
 
 
 app = FastAPI(title="FinAgent-R1 Retrieval Service", version="1.0")

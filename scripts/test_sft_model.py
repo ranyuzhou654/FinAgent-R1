@@ -66,15 +66,21 @@ def main() -> None:
     model, tokenizer = load_sft_model(config["model_name"], adapter_path)
     device = model.device
 
+    system_prompt = (
+        "You are a financial analysis agent with access to search, calculate, and SQL tools. "
+        "Use <think>...</think> for reasoning, tool tags for actions, and "
+        "<answer>...</answer> for the final answer."
+    )
+
     for question in DEFAULT_TEST_QUESTIONS:
-        prompt = (
-            "You are a financial analysis agent with access to search, calculate, and SQL tools.\n\n"
-            "Use <think>...</think> for reasoning.\n"
-            "Use tool tags when you need external help.\n"
-            "Return the final answer inside <answer>...</answer>.\n\n"
-            f"Question: {question}"
-        )
-        inputs = tokenizer(prompt, return_tensors="pt").to(device)
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Question: {question}"},
+        ]
+        input_ids = tokenizer.apply_chat_template(
+            messages, tokenize=True, add_generation_prompt=True, return_tensors="pt",
+        ).to(device)
+        inputs = {"input_ids": input_ids}
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
@@ -83,7 +89,7 @@ def main() -> None:
                 do_sample=True,
                 top_p=0.95,
             )
-        response = tokenizer.decode(outputs[0][inputs.input_ids.shape[1] :], skip_special_tokens=True)
+        response = tokenizer.decode(outputs[0][input_ids.shape[1] :], skip_special_tokens=True)
         print("=" * 80)
         print(f"Question: {question}")
         print(response[:800])

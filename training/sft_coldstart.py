@@ -33,36 +33,33 @@ def load_config(path: str | Path) -> dict:
         return yaml.safe_load(handle)
 
 
-def render_messages(messages: list[dict], tokenizer) -> str:
-    if hasattr(tokenizer, "apply_chat_template") and tokenizer.chat_template:
-        return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
-    chunks = []
-    for message in messages:
-        role = message["role"].upper()
-        chunks.append(f"{role}: {message['content']}")
-    return "\n\n".join(chunks)
-
-
 def tokenize_example(example: dict, tokenizer, max_seq_length: int) -> dict:
     messages = example["messages"]
-    full_text = render_messages(messages, tokenizer)
-    tokenized = tokenizer(full_text, truncation=True, max_length=max_seq_length)
 
-    # Mask labels: only compute loss on the assistant response.
-    # Tokenize everything except the last (assistant) message to find the split point.
-    non_assistant = [m for m in messages if m["role"] != "assistant"]
-    if non_assistant:
-        prefix_text = render_messages(non_assistant, tokenizer)
-        prefix_ids = tokenizer(prefix_text, truncation=True, max_length=max_seq_length)["input_ids"]
-        prefix_len = len(prefix_ids)
-    else:
-        prefix_len = 0
+    # Tokenize the full conversation (system + user + assistant)
+    full_ids = tokenizer.apply_chat_template(
+        messages, tokenize=True, add_generation_prompt=False,
+        max_length=max_seq_length, truncation=True,
+    )
 
-    labels = [-100] * prefix_len + tokenized["input_ids"][prefix_len:]
-    # Ensure labels length matches input_ids (truncation edge case)
-    labels = labels[: len(tokenized["input_ids"])]
-    tokenized["labels"] = labels
-    return tokenized
+    # Tokenize only the prefix (system + user) with generation prompt
+    # so we know exactly where the assistant content starts
+    prefix_messages = [m for m in messages if m["role"] != "assistant"]
+    prefix_ids = tokenizer.apply_chat_template(
+        prefix_messages, tokenize=True, add_generation_prompt=True,
+        max_length=max_seq_length, truncation=True,
+    )
+    prefix_len = len(prefix_ids)
+
+    # Mask: only compute loss on assistant tokens
+    labels = [-100] * prefix_len + full_ids[prefix_len:]
+    labels = labels[: len(full_ids)]
+
+    return {
+        "input_ids": full_ids,
+        "attention_mask": [1] * len(full_ids),
+        "labels": labels,
+    }
 
 
 def main() -> None:

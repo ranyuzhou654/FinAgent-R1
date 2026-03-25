@@ -81,6 +81,7 @@ def main() -> None:
             messages, tokenize=True, add_generation_prompt=True, return_tensors="pt",
         ).to(device)
         attention_mask = torch.ones_like(input_ids).to(device)
+        stop_strings = ["</answer>", "</search>", "</calculate>", "</sql>"]
         with torch.no_grad():
             outputs = model.generate(
                 input_ids=input_ids,
@@ -91,8 +92,16 @@ def main() -> None:
                 do_sample=True,
                 top_p=0.9,
                 repetition_penalty=1.1,
+                stop_strings=stop_strings,
+                tokenizer=tokenizer,
             )
         response = tokenizer.decode(outputs[0][input_ids.shape[1] :], skip_special_tokens=True)
+        # Truncate to first complete action (safety fallback)
+        for tag in stop_strings:
+            pos = response.find(tag)
+            if pos != -1:
+                response = response[:pos + len(tag)]
+                break
         print("=" * 80)
         print(f"Question: {question}")
         print(response[:800])

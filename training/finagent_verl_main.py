@@ -9,7 +9,6 @@ import ray
 import torch
 from omegaconf import OmegaConf
 
-from training.finagent_generation import GenerationConfig, LLMGenerationManager
 from training.reward_functions import RewardWeights, compute_finagent_score
 from training.search_r1_compat import ensure_search_r1_on_path
 
@@ -17,12 +16,6 @@ from training.search_r1_compat import ensure_search_r1_on_path
 ensure_search_r1_on_path()
 
 from verl import DataProto  # noqa: E402
-import verl.trainer.ppo.ray_trainer as ray_trainer  # noqa: E402
-
-
-ray_trainer.LLMGenerationManager = LLMGenerationManager
-ray_trainer.GenerationConfig = GenerationConfig
-
 from verl.trainer.ppo.ray_trainer import RayPPOTrainer, ResourcePoolManager, Role  # noqa: E402
 
 
@@ -84,7 +77,13 @@ def _build_reward_weights(config) -> RewardWeights:
 @hydra.main(config_path="../configs", config_name="verl_ppo_finqa", version_base=None)
 def main(config) -> None:
     if not ray.is_initialized():
-        ray.init(runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN"}})
+        ray.init(runtime_env={
+            "env_vars": {
+                "TOKENIZERS_PARALLELISM": "true",
+                "NCCL_DEBUG": "WARN",
+                "PYTHONPATH": f"{ROOT_DIR}:{ROOT_DIR / 'vendor' / 'Search-R1'}",
+            },
+        })
     ray.get(main_task.remote(config))
 
 

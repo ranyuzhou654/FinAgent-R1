@@ -12,7 +12,7 @@ from peft import LoraConfig, get_peft_model
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    DataCollatorForLanguageModeling,
+    DataCollatorForSeq2Seq,
     Trainer,
     TrainingArguments,
 )
@@ -65,6 +65,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "right"
 
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
@@ -115,7 +116,7 @@ def main() -> None:
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
-        data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False),
+        data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer, padding=True, pad_to_multiple_of=8),
     )
 
     trainer.train()

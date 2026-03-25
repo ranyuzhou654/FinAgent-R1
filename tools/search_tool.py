@@ -15,7 +15,7 @@ DEFAULT_DENSE_INDEX = ROOT_DIR / "data" / "indexes" / "dense_hnsw.index"
 DEFAULT_CORPUS_PATH = ROOT_DIR / "data" / "corpus" / "financial_passages.jsonl"
 DEFAULT_PASSAGE_MAP = ROOT_DIR / "data" / "corpus" / "passage_map.json"
 DEFAULT_FAISS_ID_MAP = ROOT_DIR / "data" / "indexes" / "faiss_id_map.json"
-DEFAULT_DENSE_MODEL = "BAAI/bge-base-en-v1.5"
+DEFAULT_DENSE_MODEL = "BAAI/bge-m3"
 
 
 @dataclass

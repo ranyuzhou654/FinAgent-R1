@@ -15,7 +15,7 @@ CORPUS_PATH = ROOT_DIR / "data" / "corpus" / "financial_passages.jsonl"
 INDEX_DIR = ROOT_DIR / "data" / "indexes"
 INDEX_PATH = INDEX_DIR / "dense_hnsw.index"
 ID_MAP_PATH = INDEX_DIR / "faiss_id_map.json"
-MODEL_NAME = "BAAI/bge-base-en-v1.5"
+MODEL_NAME = "BAAI/bge-m3"
 
 
 def load_passages() -> tuple[list[str], list[str]]:

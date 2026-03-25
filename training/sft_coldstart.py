@@ -44,9 +44,24 @@ def render_messages(messages: list[dict], tokenizer) -> str:
 
 
 def tokenize_example(example: dict, tokenizer, max_seq_length: int) -> dict:
-    text = render_messages(example["messages"], tokenizer)
-    tokenized = tokenizer(text, truncation=True, max_length=max_seq_length)
-    tokenized["labels"] = tokenized["input_ids"].copy()
+    messages = example["messages"]
+    full_text = render_messages(messages, tokenizer)
+    tokenized = tokenizer(full_text, truncation=True, max_length=max_seq_length)
+
+    # Mask labels: only compute loss on the assistant response.
+    # Tokenize everything except the last (assistant) message to find the split point.
+    non_assistant = [m for m in messages if m["role"] != "assistant"]
+    if non_assistant:
+        prefix_text = render_messages(non_assistant, tokenizer)
+        prefix_ids = tokenizer(prefix_text, truncation=True, max_length=max_seq_length)["input_ids"]
+        prefix_len = len(prefix_ids)
+    else:
+        prefix_len = 0
+
+    labels = [-100] * prefix_len + tokenized["input_ids"][prefix_len:]
+    # Ensure labels length matches input_ids (truncation edge case)
+    labels = labels[: len(tokenized["input_ids"])]
+    tokenized["labels"] = labels
     return tokenized
 
 

@@ -100,7 +100,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input-file", default=str(DEFAULT_INPUT_PATH))
     parser.add_argument("--output-file", default=str(DEFAULT_OUTPUT_PATH))
-    parser.add_argument("--max-samples", type=int, default=300)
+    parser.add_argument("--max-samples", type=int, default=2000)
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
 

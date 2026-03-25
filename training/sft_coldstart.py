@@ -90,6 +90,8 @@ def main() -> None:
         tokenize_example,
         fn_kwargs={"tokenizer": tokenizer, "max_seq_length": max_seq_length},
         remove_columns=dataset.column_names,
+        num_proc=4,
+        load_from_cache_file=False,
     )
 
     training_cfg = config["training"]

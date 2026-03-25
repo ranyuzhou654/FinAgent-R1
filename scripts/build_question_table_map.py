@@ -7,7 +7,7 @@ from pathlib import Path
 
 from datasets import load_from_disk
 
-from scripts.build_sql_database import table_name_from_question
+from build_sql_database import table_name_from_question
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]

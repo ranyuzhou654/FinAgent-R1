@@ -17,10 +17,10 @@ lora:
     - down_proj
 
 training:
-  num_train_epochs: 2
+  num_train_epochs: 1
   per_device_train_batch_size: 2
   gradient_accumulation_steps: 8
-  learning_rate: 2.0e-4
+  learning_rate: 5.0e-5
   lr_scheduler_type: cosine
   warmup_steps: 20
   logging_steps: 5

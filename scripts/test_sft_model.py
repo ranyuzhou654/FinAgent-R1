@@ -80,14 +80,17 @@ def main() -> None:
         input_ids = tokenizer.apply_chat_template(
             messages, tokenize=True, add_generation_prompt=True, return_tensors="pt",
         ).to(device)
-        inputs = {"input_ids": input_ids}
+        attention_mask = torch.ones_like(input_ids).to(device)
         with torch.no_grad():
             outputs = model.generate(
-                **inputs,
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                pad_token_id=tokenizer.pad_token_id,
                 max_new_tokens=args.max_new_tokens,
-                temperature=0.2,
+                temperature=0.1,
                 do_sample=True,
-                top_p=0.95,
+                top_p=0.9,
+                repetition_penalty=1.1,
             )
         response = tokenizer.decode(outputs[0][input_ids.shape[1] :], skip_special_tokens=True)
         print("=" * 80)

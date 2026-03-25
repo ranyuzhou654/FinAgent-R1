@@ -11,7 +11,7 @@ echo "== Downloading FinQA =="
 python - <<'PY'
 from datasets import load_dataset
 
-dataset = load_dataset("ibm-research/finqa")
+dataset = load_dataset("ibm-research/finqa", trust_remote_code=True)
 dataset.save_to_disk("finqa_hf")
 print("Saved FinQA to data/raw/finqa_hf")
 for split, items in dataset.items():

@@ -56,7 +56,11 @@ def main() -> None:
             raise FileNotFoundError(f"Processed file not found: {input_path}")
 
         rows = []
+        skipped = 0
         for index, example in enumerate(_load_jsonl(input_path)):
+            if not str(example.get("answer", "")).strip():
+                skipped += 1
+                continue
             table_name = question_table_map.get(example["id"])
             rows.append(
                 {
@@ -90,7 +94,7 @@ def main() -> None:
 
         output_path = OUTPUT_DIR / f"{split}.parquet"
         pd.DataFrame(rows).to_parquet(output_path, index=False)
-        print(f"{split}: {len(rows)} rows -> {output_path}")
+        print(f"{split}: {len(rows)} rows -> {output_path} (skipped {skipped} empty-answer samples)")
 
 
 if __name__ == "__main__":

@@ -70,6 +70,7 @@ def main() -> None:
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+        device_map="auto",
         trust_remote_code=True,
     )
     model.config.use_cache = False

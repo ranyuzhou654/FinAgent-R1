@@ -396,7 +396,7 @@ class LLMGenerationManager:
                 "return_scores": True,
                 "method": "hybrid",
             }
-            response = requests.post(self.config.search_url, json=payload, timeout=60)
+            response = requests.post(self.config.search_url, json=payload, timeout=120)
             response.raise_for_status()
             return response.json()
 

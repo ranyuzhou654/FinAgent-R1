@@ -22,7 +22,7 @@ actor_rollout_ref:
     external_lib: null
     override_config: {}
     enable_gradient_checkpointing: true
-    use_remove_padding: true
+    use_remove_padding: false
   actor:
     strategy: fsdp
     ppo_mini_batch_size: 8
@@ -99,7 +99,7 @@ critic:
     override_config: {}
     external_lib: ${actor_rollout_ref.model.external_lib}
     enable_gradient_checkpointing: true
-    use_remove_padding: true
+    use_remove_padding: false
     fsdp_config:
       param_offload: true
       grad_offload: true

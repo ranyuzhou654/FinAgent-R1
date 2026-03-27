@@ -1,4 +1,4 @@
-model_name: Qwen/Qwen2.5-3B
+model_name: Qwen/Qwen2.5-1.5B
 output_dir: checkpoints/sft
 seed_data_path: data/processed/sft_seed.jsonl
 max_seq_length: 2048
